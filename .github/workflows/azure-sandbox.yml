@@ -65,7 +65,7 @@ jobs:
 
       - name: Determine if AZ CLI is installed
         run: |
-          az version  
+          terraform version  
         # AZ_VERSION=az version --query '"azure-cli"' --output tsv
         # echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
 
