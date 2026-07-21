@@ -112,15 +112,16 @@ jobs:
           echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
           echo "$TF_dir"
           set -a
-        
-  
+          
           az login \
             -u ${{ vars.SANDBOX_USER_NAME }} \
             -p ${{ vars.SANDBOX_USER_PASSWORD }} \
             --tenant ${{ vars.SANDBOX_TENANT_ID }}
+
+          az group --list  
         #  az login --service-principal -u ARM_CLIENT_ID -p ARM_CLIENT_SECRET --tenant ARM_TENANT_ID
 
-  #     # Step 4: Terraform format check
+      # Step 4: Terraform format check
   #     - name: Terraform fmt
   #       id: fmt
   #       run: #terraform fmt -check
