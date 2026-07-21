@@ -69,7 +69,7 @@ jobs:
         run: |
           az version  
           SANDBOX_USER_NAME=${{ vars.SANDBOX_USER_NAME }}
-          echo "$SANDBOX_USER_NAME" >> $GITHUB_OUTPUT
+          echo "$SANDBOX_USER_NAME"
         # AZ_VERSION=az version --query '"azure-cli"' --output tsv
         # echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
 
