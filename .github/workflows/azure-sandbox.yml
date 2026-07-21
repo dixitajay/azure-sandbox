@@ -63,6 +63,11 @@ jobs:
           echo "date=$DATE" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
+      - name: Determine if AZ CLI is installed
+        run: |
+          AZ_VERSION=az version --query '"azure-cli"' --output tsv
+          echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
+
   # Job 2 terraform-plan
   # terraform-plan:
   #   name: 'Terraform Plan'
