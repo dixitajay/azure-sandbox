@@ -1,0 +1,184 @@
+# https://docs.github.com/en/actions/tutorials/create-an-example-workflow
+name: azure-sandbox
+#run-name: ${{ github.actor }} is learning GitHub Actions
+run-name: azure-sandbox
+on:
+  # push:
+  #   branches:
+  #     - main
+  #     - Test-branch
+  #     - 'feature/*'
+
+  workflow_dispatch:
+     inputs:
+      confirmation:
+        description: 'Make Sure you have selected the correct branch: (yes/no)'
+        required: true
+#jobs:
+#  check-bats-version:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v5
+#      - uses: actions/setup-node@v4
+#        with:
+#          node-version: '20'
+#      - run: npm install -g bats
+#      - run: bats -v
+
+jobs:
+  # Job 1 set-working-directory
+  set-working-directory:
+    name: Set Working Directory Based on Branch Name
+    runs-on: ubuntu-latest
+    outputs:
+      working_dir: ${{ steps.set-dir.outputs.working_dir }}
+      env_type: ${{ steps.set-dir.outputs.environment }}
+
+    steps:
+      # Step 1: Set Working Directory based on the branch name
+      - name: Determine Working Directory
+        id: set-dir
+        run: |
+          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
+          echo "Branch: $BRANCH_NAME"
+
+          # Set working directory and environment type based on branch name
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            WORKING_DIR="./"
+            ENV_TYPE="production"
+          elif [[ "$BRANCH_NAME" == *"staging"* ]]; then
+            WORKING_DIR="./deployments/test_env"
+            ENV_TYPE="test_env"
+          else
+            WORKING_DIR="./deployments/feature"
+            ENV_TYPE="feature"
+          fi
+          DATE=$(date +%Y-%m-%d)
+          echo "Working Directory: $WORKING_DIR"
+          echo "Environment: $ENV_TYPE"
+
+          # Set outputs for future jobs using GITHUB_OUTPUT
+          echo "working_dir=$WORKING_DIR" >> $GITHUB_OUTPUT
+          echo "environment=$ENV_TYPE" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+  # Job 2 terraform-plan
+  # terraform-plan:
+  #   name: 'Terraform Plan'
+  #   runs-on: ubuntu-latest
+  #   needs: set-working-directory  # Wait for 'set-working-directory' job to complete
+  #   env:
+  #     #ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  #     #ARM_CLIENT_ID: sandbox-user-164cf1e2-646e-48f0-ba56-34f9f327f52e@sandboxcloudazrora.onmicrosoft.com
+  #     #ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  #     #ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  #     #ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  #     TF_VERSION: ${{ github.event.inputs.terraform_version }}
+
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #       working-directory: ${{ needs.set-working-directory.outputs.working_dir }}
+
+  #   steps:
+      # Step 1: Checkout the code
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+
+      # Step 2: Setup Terraform
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v2
+  #       with:
+  #         terraform_version: ${{ env.TF_VERSION }}
+
+      # Step 3: Azure Login using assigned Service Principal
+  #     - name: Azure Login using user name and password
+  #       run: |
+  #         pwd
+  #         ls -la
+  #         echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
+  #         set -a
+          ##az login --service-principal \
+  #         az login \
+  #           -u ${{ vars.SANDBOX_USER_NAME }} \
+  #           -p ${{ vars.SANDBOX_USER_PASSWORD }} \
+  #           --tenant ${{ vars.SANDBOX_TENANT_ID }}
+
+  #     # Step 4: Terraform format check
+  #     - name: Terraform fmt
+  #       id: fmt
+  #       run: #terraform fmt -check
+
+      # Step 5: Terraform initialization
+  #     - name: Terraform init
+  #       id: init
+  #       run: |
+  #         set -a
+  #         pwd
+  #         source backend/.env.backend
+  #         terraform init 
+          # -backend-config="resource_group_name=$TF_VAR_tfstate_resource_group_name" \
+          # -backend-config="storage_account_name=$TF_VAR_tfstate_storage_account_name"
+          
+  #         ls -la
+
+      # Step 6: Terraform validate
+  #     - name: Terraform validate
+  #       id: validate
+  #       run: |
+  #         set -a
+          # Command to unlock terraform state lock 
+          # echo "yes" | terraform force-unlock <Lock ID>
+          # echo "yes" | terraform force-unlock 74f5a433-ab19-ac25-04f0-5d8f77de2e2c
+
+          #terraform validate -no-color
+      
+      # Step 7: Terraform plan
+  #     - name: Terraform plan
+  #       id: plan
+  #       run: |
+  #         terraform plan -out=${{ github.event.inputs.plan_file }}.out
+  #         terraform show -no-color ${{ github.event.inputs.plan_file }}.out > ${{ github.event.inputs.plan_file }}.txt
+  #         ls -la
+  #         pwd
+
+  # Job 3 terraform-plan
+
+
+  # Job 2
+  #test-job:
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    # Step 1: Checkout the code
+  #    - name: Checkout
+  #      uses: actions/checkout@v3
+
+  #    # Step 2: Setup Terraform
+  #    - name: Setup Terraform
+  #      uses: hashicorp/setup-terraform@v2
+  #      with:
+  #        terraform_version: "1.3.6"
+
+      # Step 3: Check versions
+      # name: Check tools versions
+      #  run: |
+      #    az --version
+      #    terraform --version
+
+      # Step 3: Check versions
+  #    - name: Az Login
+  #      run: |
+  #        az login --tenant ${{ vars.SANDBOX_TENANT_ID }} -u ${{ vars.SANDBOX_USER_NAME }} -p ${{ vars.SANDBOX_USER_PASSWORD }}
+  #        az account show
+  #        az group list
+  #        az account get-access-token
+  #        az account get-access-token --subscription "1399ea3e-cdfc-4b95-95a4-ef9b7679dfad"
+  #        echo "sandbox tenant : ${{ vars.SANDBOX_TENANT_ID }}"
+  #        echo "sandbox sub_id : ${{ vars.SANDBOX_SUBSCRIPTION_ID }}"
+  #        echo "sandbox sub_name : ${{ vars.SANDBOX_SUBSCRIPTION_NAME }}"
+  #        echo "sandbox user_name : ${{ vars.SANDBOX_USER_NAME }}"
+  #        echo "sandbox password : ${{ vars.SANDBOX_USER_PASSWORD }}"
+          #az group create --name rg-created-through-workflow --location westeurope
+          #az group delete --name rg-created-through-workflow
+

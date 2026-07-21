@@ -1,0 +1,239 @@
+name: Workflow-to_Deploy_vWAN-Solution
+#-----------------------------------------------------------------------------------------------------------------------------------
+# This Workflow can be used to deploy vWAN solution in Test & Prod Environments
+# To deploy solution in Production environment, use "main" branch to run this workflow.
+# Production deployment will use authentication controls provided by "production" environment for this repo and can be controlled there as required.
+
+# To deploy solution in Test Environment, use "test_staging_branch" branch to run this workflow.
+# Test deployment will use authentication controls provided by "test_env" environment for this repo and can be controlled there as required.
+
+#-------------------------------------------------------------------------------------------------------------------------------------
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  #     - Test-branch
+  #     - 'feature/*'
+
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Make Sure you have selected the correct branch: (yes/no)'
+        required: true
+      terraform_version:
+        description: 'Terraform version to use'
+        required: false
+        default: '1.3.6'
+      plan_file:
+        description: 'Enter the name for the plan file (without extension) to use (e.g., tfplan_env-name_DDMMYY-000 etc.)'
+        required: true      
+
+
+jobs:
+  set-working-directory:
+    name: Set Working Directory Based on Branch Name
+    runs-on: ubuntu-latest
+    outputs:
+      working_dir: ${{ steps.set-dir.outputs.working_dir }}
+      env_type: ${{ steps.set-dir.outputs.environment }}
+
+    steps:
+      # Step 1: Set Working Directory based on the branch name
+      - name: Determine Working Directory
+        id: set-dir
+        run: |
+          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
+          echo "Branch: $BRANCH_NAME"
+
+          # Set working directory and environment type based on branch name
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            WORKING_DIR="./deployments/production_env"
+            ENV_TYPE="production"
+          elif [[ "$BRANCH_NAME" == *"staging"* ]]; then
+            WORKING_DIR="./deployments/test_env"
+            ENV_TYPE="test_env"
+          else
+            WORKING_DIR="./deployments/feature"
+            ENV_TYPE="feature"
+          fi
+          DATE=$(date +%Y-%m-%d)
+          echo "Working Directory: $WORKING_DIR"
+          echo "Environment: $ENV_TYPE"
+
+          # Set outputs for future jobs using GITHUB_OUTPUT
+          echo "working_dir=$WORKING_DIR" >> $GITHUB_OUTPUT
+          echo "environment=$ENV_TYPE" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    needs: set-working-directory  # Wait for 'set-working-directory' job to complete
+    env:
+      #ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      #ARM_CLIENT_ID: sandbox-user-164cf1e2-646e-48f0-ba56-34f9f327f52e@sandboxcloudazrora.onmicrosoft.com
+      #ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      #ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      #ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      TF_VERSION: ${{ github.event.inputs.terraform_version }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ needs.set-working-directory.outputs.working_dir }}
+
+    steps:
+      # Step 1: Checkout the code
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Step 2: Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # Step 3: Azure Login using assigned Service Principal
+      - name: Azure Login using assigned Service Principal
+        run: |
+          pwd
+          ls -la
+          echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
+          set -a
+          ##az login --service-principal \
+          az login \
+            -u ${{ vars.SANDBOX_USER_NAME }} \
+            -p ${{ vars.SANDBOX_USER_PASSWORD }} \
+            --tenant ${{ vars.SANDBOX_TENANT_ID }}
+
+      # Step 4: Terraform format check
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+
+      # Step 5: Terraform initialization
+      - name: Terraform init
+        id: init
+        run: |
+          set -a
+          pwd
+          source backend/.env.backend
+          terraform init 
+          # -backend-config="resource_group_name=$TF_VAR_tfstate_resource_group_name" \
+          # -backend-config="storage_account_name=$TF_VAR_tfstate_storage_account_name"
+          
+          ls -la
+      # Step 6: Terraform validate
+      - name: Terraform validate
+        id: validate
+        run: |
+          set -a
+          # Command to unlock terraform state lock 
+          # echo "yes" | terraform force-unlock <Lock ID>
+          # echo "yes" | terraform force-unlock 74f5a433-ab19-ac25-04f0-5d8f77de2e2c
+
+          terraform validate -no-color
+
+      # Step 7: Terraform plan
+      - name: Terraform plan
+        id: plan
+        run: |
+          terraform plan -out=${{ github.event.inputs.plan_file }}.out
+          terraform show -no-color ${{ github.event.inputs.plan_file }}.out > ${{ github.event.inputs.plan_file }}.txt
+          ls -la
+          pwd
+
+      # Step 8: Upload plan output for review (artifact only)
+      - name: Upload Plan Output as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ github.run_id }}
+          path: |
+            ${{ needs.set-working-directory.outputs.working_dir }}/${{ github.event.inputs.plan_file }}.txt
+            ${{ needs.set-working-directory.outputs.working_dir }}/${{ github.event.inputs.plan_file }}.out
+         
+
+#  terraform-apply:
+#    name: 'Terraform Apply (Requires Approval)'
+#    runs-on: ubuntu-latest
+#    needs: terraform-plan
+
+#    environment:
+#      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'test_env' }}
+    
+#    env:
+#      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+#      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+#      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+#      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+#      TF_VERSION: ${{ github.event.inputs.terraform_version }}  # Use the same Terraform version
+
+#    steps:
+#      # Step 1: Set Working Directory again based on environment
+#      - name: Set Working Directory
+#        id: set-dir-apply
+#        run: |
+#          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
+#          if [[ "$BRANCH_NAME" == "main" ]]; then
+#            echo "WORKING_DIR=./deployments/production_env" >> $GITHUB_ENV
+#            echo "ENV_TYPE=production" >> $GITHUB_ENV
+#          elif [[ "$BRANCH_NAME" == *"staging"* ]]; then
+#            echo "WORKING_DIR=./deployments/test_env" >> $GITHUB_ENV
+#            echo "ENV_TYPE=test_env" >> $GITHUB_ENV
+#          else
+#            echo "WORKING_DIR=./deployments/feature" >> $GITHUB_ENV
+#            echo "ENV_TYPE=test" >> $GITHUB_ENV
+#          fi
+#      # Step 2: Checkout the code (required again)
+#      - name: Checkout repository
+#        uses: actions/checkout@v3
+
+#      # Step 3: Azure Login using Service Principal
+#      - name: Azure Login using Service Principal
+#        run: |
+#          pwd
+#          az login --service-principal \
+#            -u ${{ secrets.ARM_CLIENT_ID }} \
+#            -p ${{ secrets.ARM_CLIENT_SECRET }} \
+#            --tenant ${{ secrets.ARM_TENANT_ID }}
+
+#      # Step 4: Re-initialize Terraform in the correct working directory
+#      - name: Initialize Terraform
+#        working-directory: ${{ env.WORKING_DIR }}
+#        run: |
+#          # Setup Terraform again using the same version
+#          pwd 
+#          ls -la
+#          echo "Using Terraform version: $TF_VERSION"
+#          set -a
+#          pwd
+#          source backend/.env.backend
+#          terraform init \
+#            -backend-config="resource_group_name=$TF_VAR_tfstate_resource_group_name" \
+#            -backend-config="storage_account_name=$TF_VAR_tfstate_storage_account_name"
+
+#      # Step 5: Setup Terraform
+#      - name: Setup Terraform
+#        uses: hashicorp/setup-terraform@v2
+#        with:
+#          terraform_version: ${{ env.TF_VERSION }}  # Use the environment variable for version
+
+#      # Step 6: Download Terraform Plan Artifact
+#      - name: Download Terraform Plan Artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: terraform-plan-${{ github.run_id }}
+#          path: ${{ env.WORKING_DIR }}
+
+#      # Step 7: Apply Terraform Plan
+#      - name: Apply Terraform Plan
+#        working-directory: ${{ env.WORKING_DIR }}
+#        run: |
+#          pwd
+#          ls -la
+#          terraform apply ${{ github.event.inputs.plan_file }}.out
+#          echo "Deployment successfully completed in ${{ env.ENV_TYPE }} environment."
+#          echo "--------------------------------------FINISH--------------------------------------"
+      #--------------------------------------FINISH--------------------------------------------------------------------
