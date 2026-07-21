@@ -65,47 +65,47 @@ jobs:
 
       - name: Determine if AZ CLI is installed
         run: |
-          terraform version  
+          az version  
         # AZ_VERSION=az version --query '"azure-cli"' --output tsv
         # echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
 
   # Job 2 terraform-plan
-  # terraform-plan:
-  #   name: 'Terraform Plan'
-  #   runs-on: ubuntu-latest
-  #   needs: set-working-directory  # Wait for 'set-working-directory' job to complete
-  #   env:
-  #     #ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-  #     #ARM_CLIENT_ID: sandbox-user-164cf1e2-646e-48f0-ba56-34f9f327f52e@sandboxcloudazrora.onmicrosoft.com
-  #     #ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-  #     #ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-  #     #ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-  #     TF_VERSION: ${{ github.event.inputs.terraform_version }}
+  terraform-plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    needs: set-working-directory  # Wait for 'set-working-directory' job to complete
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      #ARM_CLIENT_ID: sandbox-user-164cf1e2-646e-48f0-ba56-34f9f327f52e@sandboxcloudazrora.onmicrosoft.com
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      #TF_VERSION: ${{ github.event.inputs.terraform_version }}
 
-  #   defaults:
-  #     run:
-  #       shell: bash
-  #       working-directory: ${{ needs.set-working-directory.outputs.working_dir }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ needs.set-working-directory.outputs.working_dir }}
 
-  #   steps:
-      # Step 1: Checkout the code
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
+    steps:
+    # Step 1: Checkout the code
+      - name: Checkout
+        uses: actions/checkout@v3
 
       # Step 2: Setup Terraform
-  #     - name: Setup Terraform
-  #       uses: hashicorp/setup-terraform@v2
-  #       with:
-  #         terraform_version: ${{ env.TF_VERSION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        #with:
+        #  terraform_version: ${{ env.TF_VERSION }}
 
       # Step 3: Azure Login using assigned Service Principal
-  #     - name: Azure Login using user name and password
-  #       run: |
-  #         pwd
-  #         ls -la
-  #         echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
-  #         set -a
-          ##az login --service-principal \
+      - name: Azure Login using user name and password
+        run: |
+          pwd
+          ls -la
+          echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
+          set -a
+  #        ##az login --service-principal \
   #         az login \
   #           -u ${{ vars.SANDBOX_USER_NAME }} \
   #           -p ${{ vars.SANDBOX_USER_PASSWORD }} \
