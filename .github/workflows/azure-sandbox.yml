@@ -104,7 +104,7 @@ jobs:
           pwd
           ls -la
           echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
-          echo "TF_dir"
+          echo "$TF_dir"
           set -a
   #        ##az login --service-principal \
   #         az login \
