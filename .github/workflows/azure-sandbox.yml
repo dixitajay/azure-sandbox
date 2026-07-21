@@ -57,6 +57,8 @@ jobs:
           echo "Working Directory: $WORKING_DIR"
           echo "Environment: $ENV_TYPE"
 
+
+
           # Set outputs for future jobs using GITHUB_OUTPUT
           echo "working_dir=$WORKING_DIR" >> $GITHUB_OUTPUT
           echo "environment=$ENV_TYPE" >> $GITHUB_OUTPUT
@@ -66,8 +68,12 @@ jobs:
       - name: Determine if AZ CLI is installed
         run: |
           az version  
+          SANDBOX_USER_NAME = ${{ vars.SANDBOX_USER_NAME }}
+          echo "$SANDBOX_USER_NAME" >> $GITHUB_OUTPUT
         # AZ_VERSION=az version --query '"azure-cli"' --output tsv
         # echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
+
+          
 
   # Job 2 terraform-plan
   terraform-plan:
