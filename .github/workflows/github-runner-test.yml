@@ -58,6 +58,7 @@ jobs:
         run: |
           az account show
           az keyvault secret show --name "azure-ai-always-free-computer-vision-primary-key" --vault-name "azure-prod130826-kv" --query value -o tsv
+          az keyvault secret show --name "secret-sauce" --vault-name "azure-sandbox-2382026-kv" --query value -o tsv
   
   
   
