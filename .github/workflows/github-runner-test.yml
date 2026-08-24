@@ -40,7 +40,8 @@ jobs:
 
   # Job 2 terraform-plan       
   login-to-azure-and-test:
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
