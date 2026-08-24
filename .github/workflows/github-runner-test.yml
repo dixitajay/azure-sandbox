@@ -65,6 +65,7 @@ jobs:
           #echo "environment=$ENV_TYPE" >> $GITHUB_OUTPUT
           #echo "date=$DATE" >> $GITHUB_OUTPUT
           #echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          pwd
 
       - name: Determine if AZ CLI is installed
         run: |
@@ -115,10 +116,10 @@ jobs:
           set -a
 
           
-          az login \
-            -u ${{ vars.SANDBOX_USER_NAME }} \
-            -p ${{ vars.SANDBOX_USER_PASSWORD }} \
-            --tenant ${{ vars.SANDBOX_TENANT_ID }}
+          #az login \
+          #  -u ${{ vars.SANDBOX_USER_NAME }} \
+          #  -p ${{ vars.SANDBOX_USER_PASSWORD }} \
+          #  --tenant ${{ vars.SANDBOX_TENANT_ID }}
 
           az account show
 
