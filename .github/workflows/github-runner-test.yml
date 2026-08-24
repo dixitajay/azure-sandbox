@@ -14,21 +14,10 @@ on:
      # confirmation:
         #description: 'Make Sure you have selected the correct branch: (yes/no)'
         #required: true
-#jobs:
-#  check-bats-version:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: actions/setup-node@v4
-#        with:
-#          node-version: '20'
-#      - run: npm install -g bats
-#      - run: bats -v
-
 jobs:
   # Job 1 set-working-directory
   set-working-directory:
-    name: Set Working Directory Based on Branch Name
+    name: Set Working Directory
     runs-on: ubuntu-latest
     outputs:
       working_dir: ${{ steps.set-dir.outputs.working_dir }}
@@ -40,40 +29,14 @@ jobs:
         id: set-dir
         run: |
           WORKING_DIR="./"
-          #BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
-          #echo "Branch: $BRANCH_NAME"
-
-          # Set working directory and environment type based on branch name
-          #if [[ "$BRANCH_NAME" == "main" ]]; then
-          #  WORKING_DIR="./"
-          #  ENV_TYPE="production"
-          #elif [[ "$BRANCH_NAME" == *"staging"* ]]; then
-          #  WORKING_DIR="./deployments/test_env"
-          #  ENV_TYPE="test_env"
-          #else
-          #  WORKING_DIR="./deployments/feature"
-          #  ENV_TYPE="feature"
-          #fi
-          #DATE=$(date +%Y-%m-%d)
           echo "Working Directory: $WORKING_DIR"
-          #echo "Environment: $ENV_TYPE"
-
-
-
           # Set outputs for future jobs using GITHUB_OUTPUT
           echo "working_dir=$WORKING_DIR" >> $GITHUB_OUTPUT
-          #echo "environment=$ENV_TYPE" >> $GITHUB_OUTPUT
-          #echo "date=$DATE" >> $GITHUB_OUTPUT
-          #echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
           pwd
 
       - name: Determine if AZ CLI is installed
         run: |
           az version  
-        # SANDBOX_USER_NAME=${{ vars.SANDBOX_USER_NAME }}
-        # echo "$SANDBOX_USER_NAME"
-        # AZ_VERSION=az version --query '"azure-cli"' --output tsv
-        # echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
 
   # Job 2 terraform-plan       
   login-to-azure-and-test:
@@ -94,6 +57,7 @@ jobs:
       - name: Run Azure CLI Commands
         run: |
           az account show
+          az keyvault secret show --name "azure-ai-always-free-computer-vision-primary-key" --vault-name "azure-prod130826-kv" --query value -o tsv
   
   
   
