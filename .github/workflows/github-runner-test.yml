@@ -75,30 +75,49 @@ jobs:
         # AZ_VERSION=az version --query '"azure-cli"' --output tsv
         # echo "az_version=$AZ_VERSION" >> $GITHUB_OUTPUT
 
-          
-
-  # Job 2 terraform-plan
-  azure-connectivity-test:
-    name: 'Azure connectivity test'
+  # Job 2 terraform-plan       
+  login-to-azure-and-test:
     runs-on: ubuntu-latest
-    needs: set-working-directory  # Wait for 'set-working-directory' job to complete
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      #ARM_CLIENT_ID: sandbox-user-164cf1e2-646e-48f0-ba56-34f9f327f52e@sandboxcloudazrora.onmicrosoft.com
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      #TF_VERSION: ${{ github.event.inputs.terraform_version }}
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ needs.set-working-directory.outputs.working_dir }}
-
     steps:
-    # Step 1: Checkout the code
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Az CLI Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Run Azure CLI Commands
+        run: |
+          az account show
+  
+  
+  
+  
+  # Job 2 terraform-plan
+  #azure-connectivity-test:
+  #  name: 'Azure connectivity test'
+  #  runs-on: ubuntu-latest
+  #  needs: set-working-directory  # Wait for 'set-working-directory' job to complete
+  #  env:
+  #    ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  #    #ARM_CLIENT_ID: sandbox-user-164cf1e2-646e-48f0-ba56-34f9f327f52e@sandboxcloudazrora.onmicrosoft.com
+  #    ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  #    ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  #    ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  #    #TF_VERSION: ${{ github.event.inputs.terraform_version }}
+
+  #  defaults:
+  #    run:
+  #      shell: bash
+  #      working-directory: ${{ needs.set-working-directory.outputs.working_dir }}
+
+  #  steps:
+  #  # Step 1: Checkout the code
+  #    - name: Checkout
+  #      uses: actions/checkout@v3
 
       # Step 2: Setup Terraform
       #- name: Setup Terraform
@@ -107,13 +126,13 @@ jobs:
       #  #  terraform_version: ${{ env.TF_VERSION }}
 
       # Step 3: Azure Login using assigned Service Principal
-      - name: Azure Login using user name and password
-        run: |
-          pwd
-          ls -la
-          #echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
-          #echo "$TF_dir"
-          set -a
+  #    - name: Azure Login using user name and password
+  #      run: |
+  #        pwd
+  #        ls -la
+  #        #echo "TF_dir=$${{ needs.set-working-directory.outputs.working_dir }}" >> $GITHUB_OUTPUT
+  #        #echo "$TF_dir"
+  #        set -a
 
           
           #az login \
@@ -121,9 +140,9 @@ jobs:
           #  -p ${{ vars.SANDBOX_USER_PASSWORD }} \
           #  --tenant ${{ vars.SANDBOX_TENANT_ID }}
 
-          az account show
+#          az account show
 
-          az keyvault secret show --name "secret-sauce" --vault-name "vpn-secret-kv" --query value -o tsv
+#          az keyvault secret show --name "secret-sauce" --vault-name "vpn-secret-kv" --query value -o tsv
         #   az group list  
         #  az login --service-principal -u ARM_CLIENT_ID -p ARM_CLIENT_SECRET --tenant ARM_TENANT_ID
 
