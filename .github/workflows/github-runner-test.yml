@@ -58,6 +58,11 @@ jobs:
 
       - name: Run Azure CLI Commands
         run: |
+          pwd
+          az --version
+          echo "${{ secrets.ARM_CLIENT_ID }}"
+          echo "${{ secrets.ARM_CLIENT_SECRET }}"
+          echo "${{ secrets.ARM_TENANT_ID }}"
           az login --service-principal --username "${{ secrets.ARM_CLIENT_ID }}" --password "${{ secrets.ARM_CLIENT_SECRET }}" --tenant "${{ secrets.ARM_TENANT_ID }}"
           az account show
           az keyvault secret show --name "azure-ai-always-free-computer-vision-primary-key" --vault-name "azure-prod130826-kv" --query value -o tsv
